@@ -4,14 +4,14 @@ const logoutButton = new LogoutButton();
 
   logoutButton.action = () => {
     ApiConnector.logout(serverData => {
-      if (serverData.success == true) {
+      if (serverData.success) {
         location.reload();
       }
     });
   }
 
   ApiConnector.current(serverData => {
-    if (serverData.success == true) {
+    if (serverData.success) {
       ProfileWidget.showProfile(serverData.data);
     }
   });
@@ -19,69 +19,53 @@ const logoutButton = new LogoutButton();
 
 const ratesBoard = new RatesBoard();
 
- const ratesInterval = setInterval(() => {
-   if (serverData) {
-     ratesBoard.clearTable();
-     ratesBoard.fillTable(serverData.data);
-   }
- }, 60000);
-ratesInterval();
+  ratesBoard.getCurrencyExchangeRates = function() {
+    ApiConnector.getStocks(serverData => {
+      if (serverData.success) {
+       ratesBoard.clearTable();
+       ratesBoard.fillTable(serverData.data);
+      }
+    });
+  } 
+ratesBoard.getCurrencyExchangeRates();
+setInterval(ratesBoard.getCurrencyExchangeRates(), 60000);
 
 
 const moneyManager = new MoneyManager();
 
-moneyManager.addMoneyCallback = (data) => {
-  ApiConnector.addMoney(data, result => {
-    if (result) {
-      moneyManager.showProfile();
-      moneyManager.setMessage('Успех');
+  function money(result) {
+    if (result.success) {
+      ProfileWidget.showProfile(result.data);
+      moneyManager.setMessage(result.success, 'Операция успешно выполнена');
     } else {
-      moneyManager.setMessage('Ошибка');
+      moneyManager.setMessage(result.success, result.error);
     }
-  });
-}
-moneyManager.conversionMoneyCallback = (data) => {
-  ApiConnector.convertMoney(data, result => {
-    if (result) {
-      moneyManager.showProfile();
-      moneyManager.setMessage('Успех');
-    } else {
-      moneyManager.setMessage('Ошибка');
-    }
-  });
-}
+  }
+moneyManager.addMoneyCallback = (data) => ApiConnector.addMoney(data, money);
+moneyManager.conversionMoneyCallback = (data) => ApiConnector.convertMoney(data, money);
+moneyManager.sendMoneyCallback = (data) => piConnector.transferMoney(data, money);
 
 
-let favoritesWidget = new FavoritesWidget();
+const favoritesWidget = new FavoritesWidget();
 
   ApiConnector.getFavorites((serverData)=> {
-    if (serverData) {
+    if (serverData.success) {
       favoritesWidget.clearTable();
-      favoritesWidget.fillTable(serverData);
-      favoritesWidget.updateUsersList(serverData);
+      favoritesWidget.fillTable(serverData.data);
+      favoritesWidget.updateUsersList(serverData.data);
     }
   });
 
-  favoritesWidget.addUserCallback = (user) => {
-    ApiConnector.addUserToFavorites(user, result => {
-      if (result) {
-        favoritesWidget.clearTable();
-        favoritesWidget.fillTable(result);
-        favoritesWidget.setMessage('Пользователь успешно добавлен в избранное');
-      } else {
-        favoritesWidget.setMessage(result.error);
-      }
-    });
+  function addingUser(serverData) {
+    if (serverData.success) {
+      favoritesWidget.clearTable();
+      favoritesWidget.fillTable(serverData.data);
+      moneyManager.updateUsersList(serverData.data);
+      favoritesWidget.setMessage(serverData.success, 'Операция успешно выполнена');
+    } else {
+      favoritesWidget.setMessage(serverData.success, serverData.error);
+    }
   }
-
-  favoritesWidget.removeUserCallback = (user) => {
-    ApiConnector.removeUserFromFavorites(user, result => {
-      if (result) {
-        favoritesWidget.clearTable();
-        favoritesWidget.fillTable(result);
-        favoritesWidget.setMessage('Пользователь успешно удален из избранного');
-      } else {
-        favoritesWidget.setMessage(result.error);
-      }
-    });
-  }
+favoritesWidget.addUserCallback = (data) => ApiConnector.addUserToFavorites(data, addingUser);
+favoritesWidget.removeUserCallback = (data) => ApiConnector.removeUserFromFavorites(data, addingUser);
+    
