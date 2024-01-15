@@ -28,7 +28,7 @@ const ratesBoard = new RatesBoard();
     });
   } 
 ratesBoard.getCurrencyExchangeRates();
-setInterval(ratesBoard.getCurrencyExchangeRates(), 60000);
+setInterval(ratesBoard.getCurrencyExchangeRates, 60000);
 
 
 const moneyManager = new MoneyManager();
@@ -43,7 +43,7 @@ const moneyManager = new MoneyManager();
   }
 moneyManager.addMoneyCallback = (data) => ApiConnector.addMoney(data, money);
 moneyManager.conversionMoneyCallback = (data) => ApiConnector.convertMoney(data, money);
-moneyManager.sendMoneyCallback = (data) => piConnector.transferMoney(data, money);
+moneyManager.sendMoneyCallback = (data) => ApiConnector.transferMoney(data, money);
 
 
 const favoritesWidget = new FavoritesWidget();
